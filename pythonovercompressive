@@ -1,0 +1,117 @@
+#Max and min values of rho_r and u_r to run
+u_start = -10
+u_end = -2
+rho_start = 3
+rho_end = 16
+
+#Create space for u_r, rho_r
+u_r = np.linspace(u_start,u_end,200)
+rho_r = np.linspace(rho_start,rho_end,200) #These don't technically need to be the same size
+
+##tspace##
+#Not used right now, but could change code to make tspace a range between init and end.
+# tinit = 0
+# tend = 2
+
+tspace = [0,1,2,3] #Each value of t we want to check.
+
+#Euler approximation. Increase the step and eulerspace endpt to get better accuracy and way slower calculation
+n = 200 #number of steps to take
+step = 1/n #stepsize in euler approx.
+eulerspace = np.linspace(0,1,n+1) #leave as 0 to 1 if checking t at each natural number. CHANGE if size between each t is not 1
+
+#Structure for storing successful values. Each index of successpts corresponds to the time. successpts[t][0] corresponds to successful rho values for each t, [t][1] corresponds to u values
+successpts = [[[],[]] for t in tspace]
+
+##############Main loop 6/30#####################
+for u in u_r:
+        for rho in rho_r:
+
+            u_deltapointstemp = [udelta_t0(rho,u)]
+            omega2pointstemp = [0]
+
+            #Run through approximation along each t in tspace
+            for t in tspace:
+                #Stop the loop once a value at each u is found (so fewer points need to be checked.) When on, only the leftmost value of each successful pt for each u will be shown. Comment out to see a filled in region.
+                if u in successpts[tspace.index(t)][1]:
+                    continue
+
+                #t=0 case
+                if t==0:
+                    if upper_bound(t) > (u_deltapointstemp[0] + A(t)) > lower_bound(rho,u,t):
+                        successpts[0][0].append(rho)
+                        successpts[0][1].append(u)
+                #All t greater than 0 will run through euler approximation
+                else:
+                    for i in eulerspace - eulerspace[0]: #Bridges between each value of t. Skip first i in euler (because it will be 0)
+                        omega2pointstemp.append(omega2pointstemp[-1] + step * domega2(rho,u,u_deltapointstemp[-1],t-1+i))
+                        # if omega2pointstemp[-1] == "nan":
+                        #     omega2pointstemp.pop()
+                        #     continue
+                        u_deltapointstemp.append(u_deltapointstemp[-1] + step * du_delta(rho,u,u_deltapointstemp[-1],omega2pointstemp[-1],domega2(rho,u,u_deltapointstemp[-1],t-1+i)))
+
+                    #Check final value from euler approx against bounds. Store point if successful
+                    if upper_bound(t) > u_deltapointstemp[-1] + A(t) > lower_bound(rho,u,t):
+                        successpts[tspace.index(t)][0].append(rho)
+                        successpts[tspace.index(t)][1].append(u)
+
+                    #continue
+                    #Why is this here??
+
+#################################################################################
+#PLOT
+
+#Set bounds of graphs
+xmin = rho_start
+xmax = rho_end
+ymax = u_end
+ymin = u_start
+
+#Plot t=0
+plt.figure(0)
+plt.title("Region of Overcompression when t=0")
+plt.scatter(successpts[0][0], successpts[0][1], s=3)
+plt.xlabel("ρ")
+plt.ylabel("u")
+plt.grid(True)
+plt.ylim(ymin,ymax)
+plt.xlim(xmin,xmax)
+plt.show()
+
+#Plot t=1
+plt.figure(1)
+plt.title("Region of Overcompression when t=1")
+plt.scatter(successpts[1][0], successpts[1][1], s=3)
+plt.ylim(ymin,ymax)
+plt.xlim(xmin,xmax)
+plt.xlabel("ρ")
+plt.ylabel("u")
+plt.grid(True)
+plt.show()
+
+#Plot t=2
+plt.figure(2)
+plt.title("Region of Overcompression when t=2")
+plt.scatter(successpts[2][0], successpts[2][1], s=3)
+plt.ylim(ymin,ymax)
+plt.xlim(xmin,xmax)
+plt.xlabel("ρ")
+plt.ylabel("u")
+plt.grid(True)
+plt.show()
+
+#Plot t=3
+plt.figure(3)
+plt.title("Region of Overcompression when t=3")
+plt.scatter(successpts[3][0], successpts[3][1], s=3)
+plt.ylim(ymin,ymax)
+plt.xlim(xmin,xmax)
+plt.xlabel("ρ")
+plt.ylabel("u")
+plt.grid(True)
+plt.show()
+
+#Improvements to make:
+#right now, each time needs to be tested in the same bounds which makes the code a lot less efficient (because large bounds may need to be tested to get all the info)
+#Doublecheck A(t) is everywhere it should be
+#pl=pbar not working
