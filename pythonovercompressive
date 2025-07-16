@@ -1,3 +1,103 @@
+import numpy as np
+from numpy.polynomial import Polynomial
+import math
+from scipy.integrate import quad
+import matplotlib.pyplot as plt
+
+#Initialize vars. u_l, rho_l should be constant while u_r, rho_r will be tested at different values
+rhobar = 3
+rho_l = 2
+u_l = 3
+a_exp = -1.5
+# delta = 1e-4
+# epsilon = 1e-4
+t0 = 0 #initial t
+w0 = 0 #initial omega
+x0 = 0 #not used
+aconst = .5
+
+# Define a(t)
+# def a(t):
+#     return aconst  # You can change this to any function of t
+#
+# # Define integral of a(s) from 0 to t (best to do this manually if possible)
+def A(t):
+    return aconst * t
+
+##CHANGED 7/16
+def domega2 (rho_r,u_r, u_delta,t):
+    # if rho_l-rho_r==0:
+    #     return "nan"
+    #else:
+        dw = (-(rho_l-rho_r) * u_delta
+            + (rho_l*(u_l + A(t)) * (1 - (rho_l / rhobar)**a_exp)
+               - (rho_r * (u_r + A(t))* (1-(rho_r/rhobar)**a_exp))))
+
+        return dw
+
+#Updated udelta [INCOMPLETE, INCLUDE DIVIDE BY 0 CHECKS]
+##CHANGED 7/16
+def du_delta(rho_r, u_r, u_delta, omega2,domega2):
+
+    du = (1/omega2) * (-(rho_l*u_l - rho_r*u_r)*u_delta
+                       + (rho_l*u_l*(u_l + A(t))*(1-(rho_l/rhobar)**a_exp) - rho_r*u_r*(u_r + A(t))*(1-(rho_r/rhobar)**a_exp)) - domega2*u_delta)
+
+    return du
+
+#initial value for udelta
+def udelta_t0(rho_r,u_r):
+
+    a = rho_l - rho_r
+    b = -(((rho_l*u_l - rho_l*u_l*(rho_l/rhobar)**a_exp) - (rho_r*u_r - rho_r*u_r*(rho_r/rhobar)**a_exp)) + (rho_l*u_l - rho_r*u_r))
+    c = (rho_l*u_l**2 - rho_l*u_l**2 * (rho_l/rhobar)**a_exp) - (rho_r*u_r**2 - rho_r*u_r**2 * (rho_r/rhobar)**a_exp)
+
+    p = Polynomial([c,b,a])
+    r = p.roots()
+
+    if rho_r<rho_l: #Bandaid, should change this. works kinda but idk y
+        return min(r)
+    else:
+        return max(r)
+
+    #OLD~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    # if ((4*(rho_l*u_l - rho_r*u_r)**2 - 4*(rho_l*u_l - rho_r*u_r)*(rho_l*u_l*(rho_l/rhobar)**a_exp - rho_r*u_r*(rho_r/rhobar)**a_exp) + (rho_l*u_l*(rho_l/rhobar)**a_exp - rho_r*u_r*(rho_r/rhobar)**a_exp)**2 - 4*(rho_l - rho_r)*(rho_l*u_l**2 - rho_l*u_l**2*(rho_l/rhobar)**a_exp - rho_r*u_r**2 + rho_r*u_r**2*(rho_r/rhobar)**a_exp)) >= 0
+    #         and (rho_l - rho_r)!=0):
+    #
+    #     udelta = (1/(2*(rho_l - rho_r))) * ((2*(rho_l*u_l - rho_r*u_r) - (rho_l*u_l * (rho_l/rhobar)**a_exp)-rho_r*u_r*(rho_r/rhobar)**a_exp) - math.sqrt(4*(rho_l*u_l - rho_r*u_r)**2 - 4*(rho_l*u_l - rho_r*u_r)*(rho_l*u_l*(rho_l/rhobar)**a_exp - rho_r*u_r*(rho_r/rhobar)**a_exp) + (rho_l*u_l*(rho_l/rhobar)**a_exp - rho_r*u_r*(rho_r/rhobar)**a_exp)**2 - 4*(rho_l - rho_r)*(rho_l*u_l**2 - rho_l*u_l**2*(rho_l/rhobar)**a_exp - rho_r*u_r**2 + rho_r*u_r**2*(rho_r/rhobar)**a_exp)))
+    # else:
+    #     udelta = 1e+10 #[CHANGE THIS ONLY TEMPORARY]
+    # return udelta
+
+#dx/dt, not being used
+# def dx(u_delta):
+#     dx = u_delta + A(t)
+#     return dx
+
+#lower bound
+def lower_bound(x, y, t):
+    return max(
+        -(y +A(t)) * ((1 + a_exp)*((x/rhobar)**a_exp) - 1),
+        -(y +A(t)) * (((x/rhobar)**a_exp) - 1)
+    )
+
+
+#Upper bound
+def upper_bound(t):
+    return min(
+        -(u_l +A(t)) * ((1 + a_exp)*((rho_l/rhobar)**a_exp) - 1), #Lambda 1
+        -(u_l +A(t)) * (((rho_l/rhobar)**a_exp) - 1) # Lambda 2
+    )
+
+# Check which lambda is greater ##########################################
+# lambda1 = -(u_l +A(t0)) * ((1 + a_exp)*((rho_l/rhobar)**a_exp) - 1)
+# lambda2 = -(u_l +A(t0)) * (((rho_l/rhobar)**a_exp) - 1)
+# if lambda1>lambda2:
+#     print("L1>L2")
+# else:
+#     print("L1<L2")
+#######################################################################
+
 #Max and min values of rho_r and u_r to run
 u_start = -10
 u_end = -2
@@ -45,18 +145,12 @@ for u in u_r:
                 else:
                     for i in eulerspace - eulerspace[0]: #Bridges between each value of t. Skip first i in euler (because it will be 0)
                         omega2pointstemp.append(omega2pointstemp[-1] + step * domega2(rho,u,u_deltapointstemp[-1],t-1+i))
-                        # if omega2pointstemp[-1] == "nan":
-                        #     omega2pointstemp.pop()
-                        #     continue
                         u_deltapointstemp.append(u_deltapointstemp[-1] + step * du_delta(rho,u,u_deltapointstemp[-1],omega2pointstemp[-1],domega2(rho,u,u_deltapointstemp[-1],t-1+i)))
 
                     #Check final value from euler approx against bounds. Store point if successful
                     if upper_bound(t) > u_deltapointstemp[-1] + A(t) > lower_bound(rho,u,t):
                         successpts[tspace.index(t)][0].append(rho)
                         successpts[tspace.index(t)][1].append(u)
-
-                    #continue
-                    #Why is this here??
 
 #################################################################################
 #PLOT
