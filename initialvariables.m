@@ -8,12 +8,12 @@ uL = 3;
 aexp = -1.5;
 
 
-a_t = 0.1;
+a_t = 0.5;
 
-times_index = [2201];
+times_index = [1,101,202,301];
 
 t_0 = 0; % idk if this is actually necessary lol but whatever
-t_end = 22; % idk lmfao
+t_end = 3; % idk lmfao
 t_step = 0.01; % idk either lol
 
 % idk if this should go here or if everything below this should go in the
@@ -57,17 +57,6 @@ Np = length(p_vals_index);  % columns
 % specific t at a specific right state. 
 
 udelta = zeros(Nu, Np, length(t_values));
-
-%% upperbound calculation
-% calculating lambda1 and lambda2 for unchanging left state
-lambdaL1 = -(uL*( ( (1+aexp)*( (pL/pbar)^aexp ) ) - 1) );
-lambdaL2 = -(uL*( ( (pL/pbar)^aexp ) - 1) );
-
-upper_bound = min(lambdaL1, lambdaL2);
-
-
-%% bounds
-lowerbounds = zeros(Nu, Np);
 
 %% initializing array of 0 and 1s for overcompressive region
 % same size as udelta. there's a 1 for points that satisfy the

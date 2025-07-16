@@ -9,7 +9,7 @@
 
 
 for i = 1:length(times_index)
-    fig = figure;
+    fig=figure(i);
     
     [OCu_index, OCp_index] = find(YNovercompressive_ind(:,:,times_index(i))==1);
 
@@ -45,7 +45,6 @@ for i = 1:length(times_index)
     hold on;
     
     % u2 becomes a vertical line when pbar = pL
-    fig1 = figure(1);
     plot(plotX,u1,'-k', 'LineWidth',1);
     if pbar == pL
         xline(pbar, '-k', 'LineWidth',1);
@@ -76,9 +75,10 @@ for i = 1:length(times_index)
     
     ylim([-10,10])
 
-    hold off
 
     axis square
+
+    hold off
 
     % saving the image
     nameFile = ['Case' num2str(caseNum) 'OvercompressiveRegion_a_t' num2str(a_t) '_t' num2str(t_values(times_index(i)))];

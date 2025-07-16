@@ -44,18 +44,20 @@ for i = 1:Nu
         % store udelta(0) into the first slice of the udelta array
         udelta(i,j,1) = eta;
         
-
         % calculating lambda1 and lambda2 for right state
-        lambdaR1 = -(uR*(((1+aexp)*((pR/pbar)^aexp))-1));
-        lambdaR2 = -(uR*(((pR/pbar)^aexp)-1));
+        lambdaR1 = -((uR)*(((1+aexp)*((pR/pbar)^aexp))-1));
+        lambdaR2 = -((uR)*(((pR/pbar)^aexp)-1));
 
         % note that upperbound does not change, so it's already calculated
         % in initial variables. might move to main script tho, idk what the
         % convention is lol
         lower_bound = max(lambdaR1, lambdaR2);
 
-        lowerbounds(i,j) = lower_bound;
+        % calculating lambda1 and lambda2 for unchanging left state
+        lambdaL1 = -(uL*( ( (1+aexp)*( (pL/pbar)^aexp ) ) - 1) );
+        lambdaL2 = -(uL*( ( (pL/pbar)^aexp ) - 1) );
 
+        upper_bound = min(lambdaL1, lambdaL2);
 
         if (udelta(i,j,1) > lower_bound) && (udelta(i,j,1) < upper_bound)
             YNovercompressive_ind(i,j,1) = 1;
@@ -89,6 +91,17 @@ for i = 1:Nu
             end
 
             udelta(i,j,t+1) = udelta(i,j,t) + t_step * udelta_prime_temp;
+
+
+            % calculating lambda1 and lambda2 for right state
+            lambdaR1 = -((uR+(a_t*t_values(t)))*(((1+aexp)*((pR/pbar)^aexp))-1));
+            lambdaR2 = -((uR+(a_t*t_values(t)))*(((pR/pbar)^aexp)-1));
+            lower_bound = max(lambdaR1, lambdaR2);
+
+            % calculating lambda1 and lambda2 for unchanging left state
+            lambdaL1 = -((uL+(a_t*t_values(t)))*( ( (1+aexp)*( (pL/pbar)^aexp ) ) - 1) );
+            lambdaL2 = -((uL+(a_t*t_values(t)))*( ( (pL/pbar)^aexp ) - 1) );
+            upper_bound = min(lambdaL1, lambdaL2);
 
             if (udelta(i,j,t+1) > lower_bound) && (udelta(i,j,t+1) < upper_bound)
             YNovercompressive_ind(i,j,t+1) = 1;
