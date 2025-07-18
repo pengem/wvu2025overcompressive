@@ -42,8 +42,10 @@ for i = 1:Nu
         end
         
         % store udelta(0) into the first slice of the udelta array
-        udelta(i,j,1) = eta;
-        
+        % inital values
+        udeltaprev = eta;
+        wprev = 0;
+
         % calculating lambda1 and lambda2 for right state
         lambdaR1 = -((uR)*(((1+aexp)*((pR/pbar)^aexp))-1));
         lambdaR2 = -((uR)*(((pR/pbar)^aexp)-1));
@@ -59,7 +61,7 @@ for i = 1:Nu
 
         upper_bound = min(lambdaL1, lambdaL2);
 
-        if (udelta(i,j,1) > lower_bound) && (udelta(i,j,1) < upper_bound)
+        if (udeltaprev > lower_bound) && (udeltaprev < upper_bound)
             YNovercompressive_ind(i,j,1) = 1;
         else
             YNovercompressive_ind(i,j,1) = 0;
@@ -78,43 +80,48 @@ for i = 1:Nu
         % it later. 
 
         % euler approximation for omega
-            w_prime(i,j,t) = ((pR-pL) * udelta(i,j,t)) + ((pL * (uL + a_t*t_values(t)))*(1 - (pL/pbar)^aexp)) - ((pR * (uR + a_t*t_values(t)))*(1 - (pR/pbar)^aexp)); 
-            w(i,j,t+1) = w(i,j,t) + (t_step * w_prime(i,j,t));
+            w_prime = ((pR-pL) * udeltaprev) + ((pL * (uL + a_t*t_values(t)))*(1 - (pL/pbar)^aexp)) - ((pR * (uR + a_t*t_values(t)))*(1 - (pR/pbar)^aexp)); 
+            wnew = wprev + (t_step * w_prime);
             
         % euler approximation for udelta
-            if w(i,j,t) == 0
+            if wprev == 0
                 udelta_prime_temp = 0;
             %elseif  NEED TO ADD THE THIRD CONDITION HERE
 
             else
-                udelta_prime_temp = (1/w(i,j,t)) * (((pR*uR - pL*uL)*udelta(i,j,t)) + (pL*uL*(uL + a_t*t_values(t))*(1-(pL/pbar)^aexp)) - (pR*uR * (uR + a_t*t_values(t))*(1-(pR/pbar)^aexp)) - (w_prime(i,j,t)*udelta(i,j,t)));
+                udelta_prime_temp = (1/wprev) * (((pR*uR - pL*uL)*udeltaprev) + (pL*uL*(uL + a_t*t_values(t))*(1-(pL/pbar)^aexp)) - (pR*uR * (uR + a_t*t_values(t))*(1-(pR/pbar)^aexp)) - (w_prime*udeltaprev));
             end
 
-            udelta(i,j,t+1) = udelta(i,j,t) + t_step * udelta_prime_temp;
+            udeltanew = udeltaprev + t_step * udelta_prime_temp;
 
+            [t_is_in_vec, intinindex] = ismember(t+1, times_index);
 
-            % calculating lambda1 and lambda2 for right state
-            lambdaR1 = -((uR+(a_t*t_values(t)))*(((1+aexp)*((pR/pbar)^aexp))-1));
-            lambdaR2 = -((uR+(a_t*t_values(t)))*(((pR/pbar)^aexp)-1));
-            lower_bound = max(lambdaR1, lambdaR2);
+            if t_is_in_vec
+                % calculating lambda1 and lambda2 for right state
+                lambdaR1 = -((uR+(a_t*t_values(t+1)))*(((1+aexp)*((pR/pbar)^aexp))-1));
+                lambdaR2 = -((uR+(a_t*t_values(t+1)))*(((pR/pbar)^aexp)-1));
+                lower_bound = max(lambdaR1, lambdaR2);
+    
+                % calculating lambda1 and lambda2 for unchanging left state
+                lambdaL1 = -((uL+(a_t*t_values(t+1)))*( ( (1+aexp)*( (pL/pbar)^aexp ) ) - 1) );
+                lambdaL2 = -((uL+(a_t*t_values(t+1)))*( ( (pL/pbar)^aexp ) - 1) );
+                upper_bound = min(lambdaL1, lambdaL2);
+    
+                if (udeltanew + (a_t*t_values(t+1)) > lower_bound) && (udeltanew+ (a_t*t_values(t+1)) < upper_bound)
+                YNovercompressive_ind(i,j, intinindex) = 1;
+                else
+                YNovercompressive_ind(i,j, intinindex) = 0;
+                end
 
-            % calculating lambda1 and lambda2 for unchanging left state
-            lambdaL1 = -((uL+(a_t*t_values(t)))*( ( (1+aexp)*( (pL/pbar)^aexp ) ) - 1) );
-            lambdaL2 = -((uL+(a_t*t_values(t)))*( ( (pL/pbar)^aexp ) - 1) );
-            upper_bound = min(lambdaL1, lambdaL2);
-
-            if (udelta(i,j,t+1) > lower_bound) && (udelta(i,j,t+1) < upper_bound)
-            YNovercompressive_ind(i,j,t+1) = 1;
-            else
-            YNovercompressive_ind(i,j,t+1) = 0;
             end
 
+            udeltaprev = udeltanew;
+            wprev = wnew;
         end
 
     end
 
 end
-
 
 % call graphs
 graphs_time;

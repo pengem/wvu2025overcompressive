@@ -7,11 +7,11 @@
 % anyway times_index takes in a vector and will generate mulitple graphs
 % depending on how many values are in the vector.
 
-
+drawnow
 for i = 1:length(times_index)
     fig=figure(i);
     
-    [OCu_index, OCp_index] = find(YNovercompressive_ind(:,:,times_index(i))==1);
+    [OCu_index, OCp_index] = find(YNovercompressive_ind(:,:,i)==1);
 
     % then need to use those indicies to get the correct points that are
     % overcompressive
