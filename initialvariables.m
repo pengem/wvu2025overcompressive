@@ -10,7 +10,8 @@ aexp = -1.5;
 
 a_t = 0.5;
 
-times_index = [1,101,202,301];
+%must ALWAYS have 1 as the first times index! 
+times_index = [1,101,201,301];
 
 t_0 = 0; % idk if this is actually necessary lol but whatever
 t_end = 3; % idk lmfao
@@ -56,18 +57,16 @@ Np = length(p_vals_index);  % columns
 % basically the three nested for loop will produce a udelta value at a
 % specific t at a specific right state. 
 
-udelta = zeros(Nu, Np, length(t_values));
-
 %% initializing array of 0 and 1s for overcompressive region
 % same size as udelta. there's a 1 for points that satisfy the
 % overcompressive region and 0 for points that don't
 
-YNovercompressive_ind = zeros(Nu, Np, length(t_values));
+YNovercompressive_ind = zeros(Nu, Np, length(times_index));
 
 %% grid for all omega values and omega prime
 % already presets t = 0 to be 0 for all points
-w = zeros(Nu, Np, length(t_values));
-w_prime = zeros(Nu, Np, length(t_values)-1);
+% w = zeros(Nu, Np, length(t_values));
+% w_prime = zeros(Nu, Np, length(t_values)-1);
 
 
 % this is just for the case number for naming files and such lol
