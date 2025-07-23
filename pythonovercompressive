@@ -7,24 +7,21 @@ import matplotlib.pyplot as plt
 #Initialize vars. u_l, rho_l should be constant while u_r, rho_r will be tested at different values
 rhobar = 3
 rho_l = 2
-u_l = 3
+u_l = 2.5
 a_exp = -1.5
-# delta = 1e-4
-# epsilon = 1e-4
-t0 = 0 #initial t
-w0 = 0 #initial omega
-x0 = 0 #not used
-aconst = .5
+aconst = .05
 
 # Define a(t)
 # def a(t):
 #     return aconst  # You can change this to any function of t
 #
-# # Define integral of a(s) from 0 to t (best to do this manually if possible)
+# # Define integral of a(s) from 0 to t (best to do this manually if possible, but could use quad or something)
 def A(t):
-    return aconst * t
+    if t==0:
+        return 0
+    else:
+        return aconst * t
 
-##CHANGED 7/16
 def domega2 (rho_r,u_r, u_delta,t):
     # if rho_l-rho_r==0:
     #     return "nan"
@@ -35,7 +32,7 @@ def domega2 (rho_r,u_r, u_delta,t):
 
         return dw
 
-##CHANGED 7/16
+#Updated udelta [INCOMPLETE, INCLUDE DIVIDE BY 0 CHECKS]
 def du_delta(rho_r, u_r, u_delta, omega2,domega2):
 
     du = (1/omega2) * (-(rho_l*u_l - rho_r*u_r)*u_delta
@@ -53,25 +50,10 @@ def udelta_t0(rho_r,u_r):
     p = Polynomial([c,b,a])
     r = p.roots()
 
-    if rho_r<rho_l: #Bandaid, should change this. works kinda but idk y
+    if rho_r<rho_l:
         return min(r)
     else:
         return max(r)
-
-    #OLD~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    # if ((4*(rho_l*u_l - rho_r*u_r)**2 - 4*(rho_l*u_l - rho_r*u_r)*(rho_l*u_l*(rho_l/rhobar)**a_exp - rho_r*u_r*(rho_r/rhobar)**a_exp) + (rho_l*u_l*(rho_l/rhobar)**a_exp - rho_r*u_r*(rho_r/rhobar)**a_exp)**2 - 4*(rho_l - rho_r)*(rho_l*u_l**2 - rho_l*u_l**2*(rho_l/rhobar)**a_exp - rho_r*u_r**2 + rho_r*u_r**2*(rho_r/rhobar)**a_exp)) >= 0
-    #         and (rho_l - rho_r)!=0):
-    #
-    #     udelta = (1/(2*(rho_l - rho_r))) * ((2*(rho_l*u_l - rho_r*u_r) - (rho_l*u_l * (rho_l/rhobar)**a_exp)-rho_r*u_r*(rho_r/rhobar)**a_exp) - math.sqrt(4*(rho_l*u_l - rho_r*u_r)**2 - 4*(rho_l*u_l - rho_r*u_r)*(rho_l*u_l*(rho_l/rhobar)**a_exp - rho_r*u_r*(rho_r/rhobar)**a_exp) + (rho_l*u_l*(rho_l/rhobar)**a_exp - rho_r*u_r*(rho_r/rhobar)**a_exp)**2 - 4*(rho_l - rho_r)*(rho_l*u_l**2 - rho_l*u_l**2*(rho_l/rhobar)**a_exp - rho_r*u_r**2 + rho_r*u_r**2*(rho_r/rhobar)**a_exp)))
-    # else:
-    #     udelta = 1e+10 #[CHANGE THIS ONLY TEMPORARY]
-    # return udelta
-
-#dx/dt, not being used
-# def dx(u_delta):
-#     dx = u_delta + A(t)
-#     return dx
 
 #lower bound
 def lower_bound(x, y, t):
@@ -88,123 +70,122 @@ def upper_bound(t):
         -(u_l +A(t)) * (((rho_l/rhobar)**a_exp) - 1) # Lambda 2
     )
 
-# Check which lambda is greater ##########################################
-# lambda1 = -(u_l +A(t0)) * ((1 + a_exp)*((rho_l/rhobar)**a_exp) - 1)
-# lambda2 = -(u_l +A(t0)) * (((rho_l/rhobar)**a_exp) - 1)
-# if lambda1>lambda2:
-#     print("L1>L2")
-# else:
-#     print("L1<L2")
-#######################################################################
-
 #Max and min values of rho_r and u_r to run
 u_start = -10
-u_end = -2
-rho_start = 3
-rho_end = 16
+u_end = 2
+rho_start = 1e-3
+rho_end = 6
 
 #Create space for u_r, rho_r
 u_r = np.linspace(u_start,u_end,200)
 rho_r = np.linspace(rho_start,rho_end,200) #These don't technically need to be the same size
 
-###### tspace #######
+#Plot shocks and stuff
+plotX = np.linspace(1e-3,20,200)
+plotX1 = np.linspace(1e-3,rhobar,int(200*rhobar/20))
+plotX2 = np.linspace(rhobar,20,int(200-(200*rhobar/20)))
+
+def Shocks(t):
+
+    u1 = u_l * np.ones(len(plotX))
+    u2 = (((rho_l**a_exp) - (plotX**a_exp))/((plotX**a_exp) - (rhobar**a_exp))) * (u_l + A(t)) + u_l
+
+    u2first = ((rho_l**a_exp - plotX1**a_exp)/(plotX1**a_exp - rhobar**a_exp)) * (u_l + A(t)) + u_l
+    u2second = (((rho_l**a_exp) - (plotX2**a_exp))/((plotX2**a_exp) - (rhobar**a_exp))) * (u_l + A(t)) + u_l
+
+    return [u2first, u2second]
+
+#####tspace#####
 #Not used right now, but could change code to make tspace a range between init and end.
 # tinit = 0
 # tend = 2
 
-tspace = [0,1,2,3] #Each value of t we want to check.
+tspace = [0,10,20] #Each value of t we want to check. These should be evenly spaced and in ascending order for now
+eventstep = tspace[1]
 
-#Euler approximation. Increase the step and eulerspace endpt to get better accuracy and way slower calculation
-n = 200 #number of steps to take
+#########Euler approximation stuff.###########
+n = 200 #number of steps to take in euler approx. Increase n to get better accuracy and way slower calculation
 step = 1/n #stepsize in euler approx.
-eulerspace = np.linspace(0,1,n+1) #leave as 0 to 1 if checking t at each natural number. CHANGE if size between each t is not 1
+eulerspace = np.linspace(0,eventstep,n+1)
 
-#Structure for storing successful values. Each index of successpts corresponds to the time. successpts[t][0] corresponds to successful rho values for each t, [t][1] corresponds to u values
+#Structure for storing successful values. Each index of successpts corresponds to the time. successpts[t..][0] corresponds to successful rho values for each t, [t..][1] corresponds to u values
 successpts = [[[],[]] for t in tspace]
 
 ############## Main loop 6/30 #####################
 for u in u_r:
-        for rho in rho_r:
+    for rho in rho_r:
 
-            u_deltapointstemp = [udelta_t0(rho,u)]
-            omega2pointstemp = [0]
+            #initial vals
+        u_deltatemp = udelta_t0(rho,u)
+        omega2temp = 0
 
             #Run through approximation along each t in tspace
-            for t in tspace:
-                #Stop the loop once a value at each u is found (so fewer points need to be checked.) When on, only the leftmost value of each successful pt for each u will be shown. Comment out to see a filled in region.
-                if u in successpts[tspace.index(t)][1]:
-                    continue
+        for t in tspace:
+                #Stop the loop once a value at each u is found (so fewer points need to be checked.) When on, only the leftmost value of each successful point for each u will be shown. Comment out to see a filled in region.
+            if u in successpts[tspace.index(t)][1]:
+                continue
 
                 #t=0 case
-                if t==0:
-                    if upper_bound(t) > (u_deltapointstemp[0] + A(t)) > lower_bound(rho,u,t):
-                        successpts[0][0].append(rho)
-                        successpts[0][1].append(u)
-                #All t greater than 0 will run through euler approximation
-                else:
-                    for i in eulerspace - eulerspace[0]: #Bridges between each value of t. Skip first i in euler (because it will be 0)
-                        omega2pointstemp.append(omega2pointstemp[-1] + step * domega2(rho,u,u_deltapointstemp[-1],t-1+i))
-                        u_deltapointstemp.append(u_deltapointstemp[-1] + step * du_delta(rho,u,u_deltapointstemp[-1],omega2pointstemp[-1],domega2(rho,u,u_deltapointstemp[-1],t-1+i)))
+            if t==0:
+                if upper_bound(t) > (u_deltatemp + A(t)) > lower_bound(rho,u,t):
+                    successpts[0][0].append(rho)
+                    successpts[0][1].append(u)
+
+            #All t greater than 0 will run through euler approximation
+            else:
+                for i in eulerspace - eulerspace[0]: #Bridges between each value of t. Skip first i in euler (because it will be 0)
+                    tnow = t-eventstep+i #update time for each step in euler
+                    omega2temp = omega2temp + step * domega2(rho,u,u_deltatemp,tnow) #update omega
+                    u_deltatemp = u_deltatemp + step * du_delta(rho,u,u_deltatemp,omega2temp,domega2(rho,u,u_deltatemp,tnow)) #update udelta
 
                     #Check final value from euler approx against bounds. Store point if successful
-                    if upper_bound(t) > u_deltapointstemp[-1] + A(t) > lower_bound(rho,u,t):
-                        successpts[tspace.index(t)][0].append(rho)
-                        successpts[tspace.index(t)][1].append(u)
+                if upper_bound(t) > u_deltatemp + A(t) > lower_bound(rho,u,t):
+                    successpts[tspace.index(t)][0].append(rho)
+                    successpts[tspace.index(t)][1].append(u)
 
-#################################################################################
-#PLOT
+############PLOT##############
 
 #Set bounds of graphs
-xmin = rho_start
+xmin = 0
 xmax = rho_end
-ymax = u_end
-ymin = u_start
+ymax = 5
+ymin = -10
 
-#Plot t=0
-plt.figure(0)
-plt.title("Region of Overcompression when t=0")
-plt.scatter(successpts[0][0], successpts[0][1], s=3)
-plt.xlabel("ρ")
-plt.ylabel("u")
-plt.grid(True)
-plt.ylim(ymin,ymax)
-plt.xlim(xmin,xmax)
-plt.show()
+title = "Region of Overcompression when t="
+message = "a = " + str(a_exp) + ", a(t) = " + str(aconst)
+if u_l > 0:
+    message += ", uL > 0, "
+else:
+    message+= ", uL < 0, "
 
-#Plot t=1
-plt.figure(1)
-plt.title("Region of Overcompression when t=1")
-plt.scatter(successpts[1][0], successpts[1][1], s=3)
-plt.ylim(ymin,ymax)
-plt.xlim(xmin,xmax)
-plt.xlabel("ρ")
-plt.ylabel("u")
-plt.grid(True)
-plt.show()
+if rho_l > rhobar:
+    message += "rhoL > rhobar"
+else:
+    message += "rhoL < rhobar"
 
-#Plot t=2
-plt.figure(2)
-plt.title("Region of Overcompression when t=2")
-plt.scatter(successpts[2][0], successpts[2][1], s=3)
-plt.ylim(ymin,ymax)
-plt.xlim(xmin,xmax)
-plt.xlabel("ρ")
-plt.ylabel("u")
-plt.grid(True)
-plt.show()
+print(message)
 
-#Plot t=3
-plt.figure(3)
-plt.title("Region of Overcompression when t=3")
-plt.scatter(successpts[3][0], successpts[3][1], s=3)
-plt.ylim(ymin,ymax)
-plt.xlim(xmin,xmax)
-plt.xlabel("ρ")
-plt.ylabel("u")
-plt.grid(True)
-plt.show()
+#Plots for each t
+for t in tspace:
+    plt.figure(facecolor = 'white')
+    ax=plt.gca()
+    ax.set_facecolor('white')
+    plt.title(title+str(t))
+    plt.scatter(successpts[tspace.index(t)][0], successpts[tspace.index(t)][1], s=2)
+    plt.axhline(y=0, color = 'darkblue')
+    plt.axvline(x=0, color = 'darkblue')
+    plt.axvline(x = rhobar, linestyle = 'dashed', color = 'red')
+    plt.plot(plotX1,Shocks(t)[0], linestyle = 'dashed', color = 'purple')
+    plt.plot(plotX2,Shocks(t)[1], linestyle = 'dashed', color = 'purple')
+    plt.ylim(ymin,ymax)
+    plt.xlim(xmin,xmax)
+    plt.xlabel("ρ")
+    plt.ylabel("u")
+
+    plt.grid(True)
+    #plt.savefig("C:\\Users\\ayres\\Desktop\\WVU REU Summer 2025\\Graphs\\Region of Overcompression when t="+str(t)+".png") #save figures
+    plt.show()
 
 #Improvements to make:
 #right now, each time needs to be tested in the same bounds which makes the code a lot less efficient (because large bounds may need to be tested to get all the info)
-#Doublecheck A(t) is everywhere it should be
-#pl=pbar not working
+#pl=rhobar not working
